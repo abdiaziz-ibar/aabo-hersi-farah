@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Hersi Farah",
+    "slug": "hersi-farah",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "android": {
+      "package": "com.abdiaziz.hersifarah",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#5b48e8"
+      }
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ad7f285c-9e90-4b08-951e-c9f771be48bd"
+      }
+    }
+  }
+}

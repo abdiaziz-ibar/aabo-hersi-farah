@@ -17,6 +17,14 @@
     },
     "android": {
       "package": "com.abdiaziz.aabo"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d0be2220-7e41-4f5c-af38-ebd77fdf38ae"
+      }
     }
   }
 }
