@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Aabo",
+    "slug": "aabo",
+    "version": "1.0.0",
+    "scheme": "aabo",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "android": {
+      "package": "com.abdiaziz.aabo"
+    }
+  }
+}
