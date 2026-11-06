@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
-import { makeSample } from './lib/sample';
 import { translate } from './i18n';
 import { Account, PaymentMethod, Transaction } from './lib/types';
 
@@ -20,8 +19,6 @@ interface Store {
   refresh: () => Promise<void>;
   add: (t: Parameters<typeof api.add>[0]) => Promise<void>;
   remove: (id: string) => Promise<void>;
-  loadSample: () => Promise<void>;
-  clearAll: () => Promise<void>;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -107,14 +104,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       remove: async (id) => {
         await api.remove(id);
-        await refresh();
-      },
-      loadSample: async () => {
-        await api.bulk(makeSample());
-        await refresh();
-      },
-      clearAll: async () => {
-        await api.clear();
         await refresh();
       },
     }),

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, BackHandler, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, BackHandler, Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -139,6 +139,15 @@ function Shell() {
         renderLoading={() => <View style={styles.center}><ActivityIndicator color={BRAND} /></View>}
         onNavigationStateChange={(s) => { canGoBack.current = s.canGoBack; }}
         setSupportMultipleWindows={false}
+        // Stay inside the Hersi Farah server: any other link opens in the phone's browser instead.
+        onShouldStartLoadWithRequest={(req) => {
+          if (req.url === 'about:blank' || req.url.startsWith(url)) return true;
+          Linking.openURL(req.url).catch(() => {});
+          return false;
+        }}
+        mixedContentMode="never"
+        allowFileAccess={false}
+        allowUniversalAccessFromFileURLs={false}
         allowsInlineMediaPlayback
       />
     </View>

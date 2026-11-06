@@ -366,3 +366,5 @@ a { color: inherit; }
 .num-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; background: var(--surface-2); border-radius: 10px; font-size: 14px; }
 .num-add { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
 @media (max-width: 560px) { .num-add { grid-template-columns: 1fr; } }
+
+.btn.small-btn { padding: 5px 10px; font-size: 12.5px; border-radius: 8px; margin-right: 4px; }

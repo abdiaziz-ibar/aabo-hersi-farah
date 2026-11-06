@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { hashPassword, publicUser, requireAdmin, requireAuth, validPassword } from './auth.js';
+import { hashPassword, passwordProblem, publicUser, requireAdmin, requireAuth } from './auth.js';
+import { audit } from './audit.js';
+import { clearBlock } from './loginguard.js';
 import { pool } from './db.js';
 import { tr } from './lang.js';
 
@@ -28,11 +30,14 @@ users.post('/', wrap(async (req, res) => {
   if (!USERNAME_RE.test(username)) {
     return res.status(400).json({ error: tr(req, 'Username: 3-32 xaraf (xarfaha, tirooyinka, . _ -)', 'Username: 3-32 characters (letters, digits, . _ -)') });
   }
-  if (!validPassword(req.body?.password)) return res.status(400).json({ error: tr(req, 'Password-ku waa inuu ahaadaa ugu yaraan 8 xaraf', 'Password must be at least 8 characters') });
+  const problem = passwordProblem(req, req.body?.password, username);
+  if (problem) return res.status(400).json({ error: problem });
   const { rows } = await pool.query(
     'INSERT INTO users (username, full_name, role, password_hash) VALUES ($1,$2,$3,$4) RETURNING *',
     [username, fullName || null, role, await hashPassword(req.body.password)],
   );
+  await clearBlock('name', username); // earlier typos of this name must not block the new user
+  await audit(req, 'user_created', username, `role ${role}`);
   res.status(201).json(publicUser(rows[0]));
 }));
 
@@ -62,16 +67,33 @@ users.patch('/:id', wrap(async (req, res) => {
      WHERE id = $4 RETURNING *`,
     [fullName, role, active, u.id],
   );
+  await audit(req, 'user_updated', u.username, `role ${role}, ${active ? 'active' : 'disabled'}`);
+  res.json(publicUser(rows[0]));
+}));
+
+// Lift a lock caused by too many wrong passwords.
+users.post('/:id/unlock', wrap(async (req, res) => {
+  if (!idOk(req.params.id)) return res.status(400).json({ error: 'bad id' });
+  const { rows } = await pool.query(
+    'UPDATE users SET locked = false, locked_at = NULL, failed_attempts = 0 WHERE id = $1 RETURNING *',
+    [req.params.id],
+  );
+  if (!rows[0]) return res.status(404).json({ error: tr(req, 'User lama helin', 'User not found') });
+  await audit(req, 'account_unlocked', rows[0].username);
   res.json(publicUser(rows[0]));
 }));
 
 users.post('/:id/reset-password', wrap(async (req, res) => {
   if (!idOk(req.params.id)) return res.status(400).json({ error: 'bad id' });
-  if (!validPassword(req.body?.password)) return res.status(400).json({ error: tr(req, 'Password-ku waa inuu ahaadaa ugu yaraan 8 xaraf', 'Password must be at least 8 characters') });
-  const { rowCount } = await pool.query(
-    'UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2',
+  const { rows: t } = await pool.query('SELECT username FROM users WHERE id = $1', [req.params.id]);
+  if (!t[0]) return res.status(404).json({ error: tr(req, 'User lama helin', 'User not found') });
+  const problem = passwordProblem(req, req.body?.password, t[0].username);
+  if (problem) return res.status(400).json({ error: problem });
+  // a password reset also lifts a lock and clears the wrong-attempt counter
+  await pool.query(
+    'UPDATE users SET password_hash = $1, token_version = token_version + 1, failed_attempts = 0, locked = false, locked_at = NULL WHERE id = $2',
     [await hashPassword(req.body.password), req.params.id],
   );
-  if (!rowCount) return res.status(404).json({ error: tr(req, 'User lama helin', 'User not found') });
+  await audit(req, 'password_reset', t[0].username);
   res.status(204).end();
 }));

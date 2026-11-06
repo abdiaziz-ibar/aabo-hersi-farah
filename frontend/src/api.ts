@@ -1,4 +1,4 @@
-import { Account, ClosingPreview, ClosingRecord, PaymentMethod, SavedNumber, Transaction, UserRow } from './lib/types';
+import { Account, AuditEntry, BlockEntry, ClosingPreview, ClosingRecord, PaymentMethod, SavedNumber, Transaction, UserRow } from './lib/types';
 import { getLang, translate } from './i18n';
 import { AuthUser, getToken, notifyUnauthorized } from './token';
 
@@ -52,9 +52,7 @@ export const api = {
   // transactions
   list: () => req<Transaction[]>('/transactions'),
   add: (t: NewTx) => req<Transaction>('/transactions', json('POST', t)),
-  bulk: (items: NewTx[]) => req<{ inserted: number }>('/transactions/bulk', json('POST', items)),
   remove: (id: string) => req<void>(`/transactions/${id}`, json('DELETE')),
-  clear: () => req<void>('/transactions', json('DELETE')),
 
   // users (admin)
   users: () => req<UserRow[]>('/users'),
@@ -63,6 +61,15 @@ export const api = {
     req<UserRow>(`/users/${id}`, json('PATCH', patch)),
   resetPassword: (id: string, password: string) =>
     req<void>(`/users/${id}/reset-password`, json('POST', { password })),
+
+  unlockUser: (id: string) => req<UserRow>(`/users/${id}/unlock`, json('POST')),
+
+  // security (admin)
+  security: () => req<{ maxFailedAttempts: number }>('/settings/security'),
+  setSecurity: (maxFailedAttempts: number) => req<{ maxFailedAttempts: number }>('/settings/security', json('PUT', { maxFailedAttempts })),
+  blocks: () => req<BlockEntry[]>('/settings/blocks'),
+  unblock: (kind: BlockEntry['kind'], key: string) => req<void>('/settings/blocks/unblock', json('POST', { kind, key })),
+  audit: (limit = 50) => req<AuditEntry[]>(`/audit?limit=${limit}`),
 
   // accounts
   accounts: () => req<Account[]>('/accounts'),

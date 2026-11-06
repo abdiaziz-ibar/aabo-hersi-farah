@@ -10,7 +10,9 @@ if (!process.env.DATABASE_URL) {
 
 export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Neon requires TLS
+  // Neon requires TLS. Verify the server certificate (protects against man-in-the-middle).
+  // Only set DB_SSL_INSECURE=true if your own database uses a self-signed certificate.
+  ssl: { rejectUnauthorized: process.env.DB_SSL_INSECURE !== 'true' },
   max: 5,
 });
 
@@ -36,6 +38,40 @@ export async function initDb() {
     UPDATE users SET role = 'admin'
       WHERE id = (SELECT min(id) FROM users)
         AND NOT EXISTS (SELECT 1 FROM users WHERE role = 'admin');
+
+    -- brute-force protection: wrong passwords in a row, and a persistent lock an admin must lift
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_attempts INT NOT NULL DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS locked BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ;
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key    TEXT PRIMARY KEY,
+      value  TEXT NOT NULL
+    );
+
+    -- wrong-login tracking for names that are NOT users, and for networks (IPs)
+    CREATE TABLE IF NOT EXISTS login_blocks (
+      kind        TEXT NOT NULL CHECK (kind IN ('name','ip')),
+      key         TEXT NOT NULL,
+      failed      INT NOT NULL DEFAULT 0,
+      blocked     BOOLEAN NOT NULL DEFAULT false,
+      first_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+      last_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+      blocked_at  TIMESTAMPTZ,
+      PRIMARY KEY (kind, key)
+    );
+
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id          BIGSERIAL PRIMARY KEY,
+      at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+      actor_id    BIGINT,
+      actor_name  TEXT NOT NULL DEFAULT '',
+      action      TEXT NOT NULL,
+      target      TEXT NOT NULL DEFAULT '',
+      detail      TEXT NOT NULL DEFAULT '',
+      ip          TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS audit_log_at_idx ON audit_log (at DESC);
 
     CREATE TABLE IF NOT EXISTS accounts (
       id          TEXT PRIMARY KEY,

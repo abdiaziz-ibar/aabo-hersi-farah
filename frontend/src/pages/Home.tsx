@@ -56,7 +56,7 @@ function usePullToRefresh(onRefresh: () => Promise<void>) {
 }
 
 export default function Home() {
-  const { transactions, activeAccounts, loading, error, hideBalances, toggleHide, dark, refresh, loadSample } = useStore();
+  const { transactions, activeAccounts, loading, error, hideBalances, toggleHide, dark, refresh } = useStore();
   const { t, place, lang } = useLang();
   const { user, isAdmin } = useAuth();
   const nav = useNavigate();
@@ -69,7 +69,6 @@ export default function Home() {
   const doRefresh = useCallback(() => refresh(), [refresh]);
   const { pull, busy } = usePullToRefresh(doRefresh);
   const [spin, setSpin] = useState(false);
-  const [seeding, setSeeding] = useState(false);
 
   const totals = useMemo(() => monthTotals(transactions, ym), [transactions, ym]);
   const total = useMemo(() => balanceUpTo(transactions, ym), [transactions, ym]);
@@ -175,18 +174,6 @@ export default function Home() {
           <span className="account-icon big"><Sparkles size={30} /></span>
           <h3>{t('Bilow dhaqdhaqaaqaaga ugu horreeya')}</h3>
           <p className="muted">{t('Taabo “Ku dar” si aad u darto lacag soo gashay ama bixid.')}</p>
-          {isAdmin && (
-            <button
-              className="btn"
-              disabled={seeding}
-              onClick={async () => {
-                setSeeding(true);
-                try { await loadSample(); } finally { setSeeding(false); }
-              }}
-            >
-              {t('Soo geli xog tijaabo')}
-            </button>
-          )}
         </div>
       ) : (
         !loading && (

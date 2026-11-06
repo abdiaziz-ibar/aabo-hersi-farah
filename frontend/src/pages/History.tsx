@@ -40,7 +40,12 @@ export default function History() {
   const expense = list.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
   const exportCsv = () => {
-    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    // Neutralise spreadsheet formulas (=, +, -, @) in user-entered text so Excel/Sheets never run them.
+    const esc = (v: string | number) => {
+      let s = String(v);
+      if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+      return `"${s.replace(/"/g, '""')}"`;
+    };
     const rows = [
       [tr('Taariikh'), tr('Qofka / Dhinaca'), tr('Meesha'), tr('Xisaab'), tr('Nooca'), tr('Lacagta'), tr('Habka'), tr('Lambarka'), tr('Diiwaangeliyay')],
       ...list.map((t) => [

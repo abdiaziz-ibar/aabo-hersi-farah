@@ -25,6 +25,7 @@ try {
   if (existing[0]) {
     await pool.query(
       `UPDATE users SET password_hash = $1, token_version = token_version + 1, active = true,
+         failed_attempts = 0, locked = false, locked_at = NULL,
          role = COALESCE($3, role) WHERE id = $2`,
       [hash, existing[0].id, roleArg ?? null],
     );

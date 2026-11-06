@@ -1,13 +1,14 @@
 import { LogOut } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '../api';
 import { useAuth } from '../auth';
 import { PageHeader } from '../components/PageHeader';
 import { LangToggle, useLang } from '../i18n';
 import { useStore } from '../store';
 
 export default function Settings() {
-  const { loadSample, clearAll, dark, toggleTheme, hideBalances, toggleHide } = useStore();
+  const { dark, toggleTheme, hideBalances, toggleHide } = useStore();
   const { t } = useLang();
   const { user, isAdmin, logout, changePassword } = useAuth();
 
@@ -16,7 +17,20 @@ export default function Settings() {
   const [confirm, setConfirm] = useState('');
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [toolMsg, setToolMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [maxFails, setMaxFails] = useState(3);
+  const [secMsg, setSecMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => {
+    if (isAdmin) api.security().then((s) => setMaxFails(s.maxFailedAttempts)).catch(() => {});
+  }, [isAdmin]);
+  const saveSecurity = async () => {
+    try {
+      const r = await api.setSecurity(maxFails);
+      setMaxFails(r.maxFailedAttempts);
+      setSecMsg({ ok: true, text: t('La kaydiyey') });
+    } catch (e) {
+      setSecMsg({ ok: false, text: e instanceof Error ? e.message : t('Cillad') });
+    }
+  };
 
   const submitPw = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,14 +47,6 @@ export default function Settings() {
     }
   };
 
-  const tool = async (fn: () => Promise<void>, ok: string) => {
-    try {
-      await fn();
-      setToolMsg({ ok: true, text: ok });
-    } catch (e) {
-      setToolMsg({ ok: false, text: e instanceof Error ? e.message : t('Cillad') });
-    }
-  };
 
   return (
     <div className="page narrow">
@@ -101,18 +107,23 @@ export default function Settings() {
         </form>
 
         {isAdmin && (
-          <div className="card danger-zone">
-            <h3 className="mb">{t('Xogta (Admin)')}</h3>
-            <p className="muted small mb">{t('Qalabkan waxaa loogu talagalay tijaabo. Waxay saameeyaan xogta dhammaan isticmaalayaasha.')}</p>
-            <div className="row-gap">
-              <button className="btn" onClick={() => tool(loadSample, t('Xogta tijaabada waa la geliyey'))}>{t('Soo geli xog tijaabo')}</button>
-              <button className="btn danger" onClick={() => {
-                if (window.confirm(t('Dhammaan dhaqdhaqaaqa waa la tirtiri doonaa. Sii wad?'))) void tool(clearAll, t('Dhammaan waa la tirtiray'));
-              }}>{t('Tirtir dhammaan dhaqdhaqaaqa')}</button>
-            </div>
-            {toolMsg && <div className={`alert ${toolMsg.ok ? 'success' : 'danger'}`} style={{ marginTop: 12 }}>{toolMsg.text}</div>}
+          <div className="card">
+            <h3 className="mb">{t('Amniga')}</h3>
+            <label className="field">
+              <span>{t('Isku-day khaldan oo la ogol yahay')}</span>
+              <div className="pw-row">
+                <input className="input" type="number" min={1} max={10} value={maxFails}
+                  onChange={(e) => setMaxFails(Math.max(1, Math.min(10, Number(e.target.value) || 1)))} style={{ maxWidth: 120 }} />
+                <button className="btn primary" onClick={() => void saveSecurity()}>{t('Kaydi')}</button>
+              </div>
+            </label>
+            <p className="muted small" style={{ marginTop: 8 }}>
+              {t('Marka isku-dayga khaldan uu ka badsado tiradan, xisaabta waa la xidhayaa. Maamuluhu wuxuu ka furi karaa bogga Isticmaalayaasha.')}
+            </p>
+            {secMsg && <div className={`alert ${secMsg.ok ? 'success' : 'danger'}`} style={{ marginTop: 10 }}>{secMsg.text}</div>}
           </div>
         )}
+
       </div>
     </div>
   );

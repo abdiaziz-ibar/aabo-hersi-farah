@@ -42,7 +42,27 @@ export interface UserRow {
   fullName: string;
   role: 'admin' | 'staff';
   active: boolean;
+  locked?: boolean; // too many wrong passwords; an admin must unlock
+  failedAttempts?: number;
   createdAt?: string;
+}
+
+export interface BlockEntry {
+  kind: 'name' | 'ip';
+  key: string;
+  failed: number;
+  blockedAt: string;
+  expiresInMinutes: number | null;
+}
+
+export interface AuditEntry {
+  id: string;
+  at: string;
+  actor: string;
+  action: string;
+  target: string;
+  detail: string;
+  ip: string;
 }
 
 export interface AccountFigures { opening: number; income: number; expense: number; closing: number }

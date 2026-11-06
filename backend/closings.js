@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAdmin, requireAuth } from './auth.js';
+import { audit } from './audit.js';
 import { pool } from './db.js';
 import { computeSummary, currentPeriod } from './period.js';
 import { tr } from './lang.js';
@@ -62,6 +63,7 @@ closings.post('/', requireAdmin, wrap(async (req, res) => {
   );
   if (!rowCount) return res.status(409).json({ error: tr(req, 'Bishan horey ayaa loo xiray', 'This month is already closed') });
   const { rows } = await pool.query(`${SELECT} WHERE pc.year = $1 AND pc.month = $2`, [ym.year, ym.month]);
+  await audit(req, 'month_closed', `${ym.year}-${String(ym.month).padStart(2, '0')}`);
   res.status(201).json(toApi(rows[0]));
 }));
 
@@ -69,5 +71,6 @@ closings.delete('/:year/:month', requireAdmin, wrap(async (req, res) => {
   const ym = parseYM(req.params);
   if (!ym) return res.status(400).json({ error: 'bad year/month' });
   await pool.query('DELETE FROM period_closes WHERE year = $1 AND month = $2', [ym.year, ym.month]);
+  await audit(req, 'month_reopened', `${ym.year}-${String(ym.month).padStart(2, '0')}`);
   res.status(204).end();
 }));
