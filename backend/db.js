@@ -12,7 +12,8 @@ export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   // Neon requires TLS. Verify the server certificate (protects against man-in-the-middle).
   // Only set DB_SSL_INSECURE=true if your own database uses a self-signed certificate.
-  ssl: { rejectUnauthorized: process.env.DB_SSL_INSECURE !== 'true' },
+  // DB_SSL=false is only for a throw-away local test database (never for Neon).
+  ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: process.env.DB_SSL_INSECURE !== 'true' },
   max: 5,
 });
 

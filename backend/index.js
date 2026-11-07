@@ -12,6 +12,8 @@ import { auditRouter, settingsRouter } from './settings.js';
 import { methods } from './methods.js';
 import { closings } from './closings.js';
 import { initDb, pool } from './db.js';
+import { runMigrations } from './migrate.js';
+import { financial } from './financial/router.js';
 import { touchesClosedMonth } from './period.js';
 import { users } from './users.js';
 import { langMiddleware, tr } from './lang.js';
@@ -147,6 +149,9 @@ app.use('/api/methods', methods);
 // ---------- accounting periods ----------
 app.use('/api/closings', closings);
 
+// ---------- financial transactions: EVC Plus / Salaam Bank CSV imports, search, reports (admin only) ----------
+app.use('/api/financial-transactions', financial);
+
 // ---------- transactions: shared books, any signed-in user can read/add ----------
 app.use('/api/transactions', requireAuth);
 
@@ -213,6 +218,7 @@ app.use((err, req, res, _next) => {
 
 const port = Number(process.env.PORT) || 4000;
 initDb()
+  .then(runMigrations)
   .then(() => app.listen(port, () => console.log(`API ready on http://localhost:${port}`)))
   .catch((e) => {
     console.error('Could not connect to the database:', e.message);

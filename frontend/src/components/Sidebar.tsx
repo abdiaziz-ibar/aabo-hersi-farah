@@ -1,4 +1,4 @@
-import { Clock, LayoutGrid, Lock, LogOut, Moon, Settings, Sun, Smartphone, Users, Wallet } from 'lucide-react';
+import { BarChart3, Clock, FileUp, LayoutGrid, Lock, LogOut, Moon, Search, Settings, Sun, Smartphone, Users, Wallet } from 'lucide-react';
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth';
@@ -28,6 +28,10 @@ export function Sidebar() {
         {link('/', t('Dashboard'), LayoutGrid)}
         {link('/history', t('Taariikh'), Clock)}
         {link('/close', t('Xisaab xir'), Lock)}
+        {isAdmin && <div className="side-group">Transactions</div>}
+        {isAdmin && link('/fin/import', 'CSV Import', FileUp)}
+        {isAdmin && link('/fin/search', 'Transaction Search', Search)}
+        {isAdmin && link('/fin/reports', 'Transaction Reports', BarChart3)}
         <div className="side-group">{t('Maamul')}</div>
         {isAdmin && link('/accounts', t('Xisaabaha'), Wallet)}
         {isAdmin && link('/methods', t('Habka lacag-bixinta'), Smartphone)}

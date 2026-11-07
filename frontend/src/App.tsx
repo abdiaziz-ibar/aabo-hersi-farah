@@ -4,6 +4,7 @@ import { useAuth } from './auth';
 import { AddTxProvider } from './components/AddTx';
 import { Sidebar } from './components/Sidebar';
 import { TabBar } from './components/TabBar';
+import FinModule from './pages/fin';
 import Accounts from './pages/Accounts';
 import Close from './pages/Close';
 import History from './pages/History';
@@ -29,6 +30,7 @@ function Protected() {
               <Route path="/methods" element={<Methods />} />
               <Route path="/users" element={<Users />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/fin/*" element={<FinModule />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
